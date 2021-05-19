@@ -8,7 +8,7 @@ from __future__ import unicode_literals, print_function, absolute_import
 from builtins import str
 import requests
 import bibtexparser
-import re
+import re, datetime
 
 bare_url = "http://api.crossref.org/"
 
@@ -80,6 +80,8 @@ def get_bib_from_doi(doi, abbrev_journal=True, add_abstract=False):
         found, item = get_json(doi)
         if found:
             abbreviated_journal = item["message"]["short-container-title"]
+            monthInt = item["message"]["created"]["date-parts"][0][1]
+            monthStr = datetime.datetime.strptime(str(monthInt), "%m").strftime("%b")
             if add_abstract and "abstract" in item["message"].keys():
                 abstract = item["message"]["abstract"]
                 bi = bibtexparser.loads(bib)
@@ -92,5 +94,6 @@ def get_bib_from_doi(doi, abbrev_journal=True, add_abstract=False):
                     r"journal = \{[^>]*?\}",
                     "journal = {" + abbreviated_journal + "}",
                     bib)
+            bib = re.sub(r"@article\{([^>]*?)\,", r"@article{\1_"+monthStr+",", bib)
 
     return found, bib
